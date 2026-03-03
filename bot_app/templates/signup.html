@@ -1,0 +1,14 @@
+<script src="https://cdn.tailwindcss.com"></script>
+<body class="bg-[#020617] h-screen flex items-center justify-center font-sans">
+    <div class="bg-white/5 p-12 rounded-[3rem] border border-white/10 w-96 text-center shadow-2xl">
+        <h1 class="text-white text-2xl font-black mb-10 tracking-tighter uppercase">Nexus <span class="text-indigo-500">Signup</span></h1>
+        {% if messages %}{% for m in messages %}<p class="text-red-500 text-[10px] mb-4 font-bold">{{m}}</p>{% endfor %}{% endif %}
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <input name="username" placeholder="Username" class="w-full p-4 bg-white/5 rounded-2xl text-white border border-white/10 outline-none focus:border-indigo-500" required>
+            <input type="password" name="password" placeholder="Password" class="w-full p-4 bg-white/5 rounded-2xl text-white border border-white/10 outline-none focus:border-indigo-500" required>
+            <button class="w-full bg-indigo-600 p-4 rounded-2xl text-white font-black text-xs uppercase tracking-widest hover:bg-indigo-500 transition shadow-lg shadow-indigo-500/20">Create Account</button>
+        </form>
+        <p class="mt-6 text-slate-500 text-xs">Member already? <a href="/login/" class="text-indigo-400">Login</a></p>
+    </div>
+</body>
