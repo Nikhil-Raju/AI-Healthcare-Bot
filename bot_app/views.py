@@ -9,7 +9,7 @@ from .models import SearchHistory
 
 # Initialize OpenAI Client - FIXED SYNTAX
 client = OpenAI(
-    api_key="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"
+    api_key="your api key"
 )
 
 def signup_view(request):
