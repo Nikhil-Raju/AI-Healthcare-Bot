@@ -1,16 +1,19 @@
+import os
+import urllib.parse
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.http import JsonResponse
 from openai import OpenAI
-import urllib.parse
+from dotenv import load_dotenv
 from .models import SearchHistory
 
-# Initialize OpenAI Client - FIXED SYNTAX
-client = OpenAI(
-    api_key="your api key"
-)
+# Load variables from the .env file
+load_dotenv()
+
+# Securely fetch key from environment
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def signup_view(request):
     if request.method == "POST":
@@ -36,35 +39,39 @@ def login_view(request):
 def chat_view(request):
     if not request.user.is_authenticated: 
         return redirect('login')
-    # Fixed: Filter history by the logged-in user
     history = SearchHistory.objects.filter(user=request.user).order_by('-timestamp')
     return render(request, 'index.html', {'history': history})
 
 def chat_api(request):
     query = request.GET.get('text', '')
     if not query:
-        return JsonResponse({'reply': 'No input provided.'})
+        return JsonResponse({'reply': 'Awaiting input...', 'is_health': False})
+    
     try:
+        # Start of the diagnostic logic
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are Nexus Health AI. Provide symptoms, medications in **bold**, and a professional disclaimer."},
+                {"role": "system", "content": "You are Nikhil AI: Health Intelligence Core. Provide professional analysis."},
                 {"role": "user", "content": query}
             ]
         )
         reply = response.choices[0].message.content
         
-        # Save search to database
+        # Save record to database
         SearchHistory.objects.create(user=request.user, query=query, ai_response=reply)
-        
         q = urllib.parse.quote(query)
+        
         return JsonResponse({
             'reply': reply, 
-            'h_link': f"https://www.google.com/maps/search/{q}+hospital+near+me",
+            'is_health': True,
+            'h_link': f"https://www.google.com/maps/search/{q}+hospital",
             'p_link': f"https://www.1mg.com/search/all?name={q}"
         })
+
     except Exception as e:
-        return JsonResponse({'reply': f"Nexus Core Error: {str(e)}"})
+        # This block was likely missing or misaligned, causing your error
+        return JsonResponse({'reply': f"Diagnostic Interrupt: {str(e)}", 'is_health': False})
 
 def logout_view(request):
     logout(request)

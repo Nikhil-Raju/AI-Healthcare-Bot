@@ -2,104 +2,131 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Nikhil AI | Executive Diagnostic</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nikhil AI | Health Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        :root { --obsidian: #020408; }
-        body { background: radial-gradient(circle at top, #0c1222, var(--obsidian)); color: #f1f5f9; font-family: 'Inter', sans-serif; overflow: hidden; margin: 0; }
-        .health-board { background: #ffffff; color: #0f172a; border-radius: 28px; width: 95%; max-width: 1050px; height: 72vh; display: flex; flex-direction: column; overflow: hidden; animation: fadeIn 0.4s ease-out; }
-        .content-scroll { flex: 1; overflow-y: auto; padding: 40px; scrollbar-width: none; }
-        .fixed-footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px 40px; display: flex; justify-content: space-between; align-items: center; }
-        .history-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 16px; border-radius: 16px; margin-bottom: 12px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        :root { --accent: #6366f1; --bg: #0b0f1a; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: white; }
+        .glass-sidebar { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(15px); border-right: 1px solid rgba(255, 255, 255, 0.05); }
+        .clinical-card { background: white; border-radius: 2.5rem; color: #1e293b; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); transform-origin: bottom; animation: popIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #312e81; border-radius: 10px; }
+        .history-item { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .history-item:hover { background: rgba(99, 102, 241, 0.1); border-color: var(--accent); transform: translateX(5px); }
     </style>
 </head>
-<body class="h-screen flex flex-col">
+<body class="h-screen flex overflow-hidden">
 
-    <header class="flex justify-between items-center px-10 py-5 border-b border-white/5 bg-black/20">
-        <div class="flex items-center gap-4">
-            <div class="w-9 h-9 rounded-lg bg-indigo-600/20 flex items-center justify-center font-black text-indigo-400">N</div>
-            <h1 class="text-[10px] font-black tracking-[4px] uppercase text-slate-400">Nikhil AI Diagnostic</h1>
+    <aside class="w-80 glass-sidebar flex flex-col p-8">
+        <div class="mb-10">
+            <h1 class="text-white font-extrabold text-2xl tracking-tighter italic">NIKHIL<span class="text-indigo-500">AI</span></h1>
+            <p class="text-[9px] text-slate-500 font-bold tracking-[0.3em] uppercase mt-1">Health Intelligence v2.4</p>
         </div>
-        <div class="flex items-center gap-6">
-            <span class="text-[11px] font-black text-slate-300 uppercase tracking-widest">{{ request.user.username }}</span>
-            <a href="{% url 'logout' %}" class="text-[10px] font-black text-red-500 border border-red-500/20 px-4 py-1.5 rounded-md uppercase">Logout</a>
+        
+        <div class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-2" id="history-list">
+            <h3 class="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-6">Patient History</h3>
+            {% for entry in history %}
+            <div class="history-item p-4 rounded-2xl border border-white/5 cursor-pointer group bg-white/0" onclick="document.getElementById('u-in').value='{{ entry.query|escapejs }}'; executeAnalysis(event);">
+                <p class="text-[12px] text-slate-400 group-hover:text-white transition truncate">{{ entry.query }}</p>
+                <p class="text-[8px] text-slate-600 mt-2 uppercase font-bold">{{ entry.timestamp|date:"M d, H:i" }}</p>
+            </div>
+            {% empty %}
+            <div class="text-center py-10 text-[10px] text-slate-700 uppercase tracking-widest">No prior records</div>
+            {% endfor %}
         </div>
-    </header>
+    </aside>
 
-    <div class="flex-1 flex overflow-hidden">
-        <aside class="w-80 p-8 border-r border-white/5 bg-black/10 flex flex-col">
-            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">Case History</span>
-            <div id="history-list" class="space-y-4 overflow-y-auto">
-                {% for item in history %}
-                <div class="history-card">
-                    <p class="text-[11px] text-slate-300 truncate font-medium">{{ item.query }}</p>
-                    <p class="text-[8px] text-slate-600 mt-2 font-mono uppercase">{{ item.timestamp|date:"M d, H:i" }}</p>
+    <main class="flex-1 flex flex-col p-10 relative">
+        
+        <nav class="absolute top-10 right-10 flex items-center gap-6 z-50">
+            <div class="flex items-center gap-4 bg-white/5 px-6 py-3 rounded-full border border-white/10 shadow-xl">
+                <div class="flex flex-col text-right">
+                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Authorized User</span>
+                    <span class="text-xs font-extrabold text-white">{{ user.username|upper }}</span>
                 </div>
-                {% endfor %}
+                <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-black text-white ring-4 ring-indigo-500/20">
+                    {{ user.username|slice:":1"|upper }}
+                </div>
             </div>
-        </aside>
+            <a href="{% url 'logout' %}" title="Terminate Session" class="bg-red-500/10 p-4 rounded-full border border-red-500/20 hover:bg-red-500/20 transition group">
+                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            </a>
+        </nav>
 
-        <main class="flex-1 flex flex-col items-center justify-center p-8">
-            <div id="board-container" class="w-full flex justify-center items-center">
-                <div class="text-slate-700 text-[10px] font-black tracking-[6px] opacity-20 uppercase">System Idle : Awaiting Clinical Input</div>
+        <div class="max-w-4xl w-full mx-auto h-full flex flex-col gap-8">
+            
+            <div id="board-container" class="flex-1 flex flex-col justify-end pb-4">
+                <div class="clinical-card p-16 text-center">
+                    <div class="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner animate-pulse">
+                        <svg class="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    </div>
+                    <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">System Status: Optimal</h2>
+                    <p class="text-slate-500 mt-4 text-sm max-w-sm mx-auto font-medium leading-relaxed">Please provide a detailed description of symptoms or pharmaceutical inquiries for immediate clinical analysis.</p>
+                </div>
             </div>
 
-            <div class="w-full max-w-4xl mt-8">
-                <form onsubmit="executeAnalysis(event)" class="flex gap-4 bg-slate-900/60 border border-white/10 p-3 rounded-[28px] shadow-2xl">
-                    <input id="u-in" autocomplete="off" type="text" placeholder="Describe symptoms (e.g. fever)..." class="flex-1 bg-transparent px-8 py-4 outline-none text-sm text-white">
-                    <button type="submit" class="bg-indigo-600 px-14 py-4 rounded-[20px] font-black text-[11px] text-white uppercase tracking-widest">Analyse</button>
+            <div class="relative group">
+                <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[2.5rem] blur opacity-10 group-hover:opacity-25 transition duration-1000"></div>
+                <form onsubmit="executeAnalysis(event)" class="relative">
+                    {% csrf_token %}
+                    <input type="text" id="u-in" placeholder="Scan symptoms (e.g., 'Chronic fatigue with localized migraine')..." 
+                        class="w-full bg-slate-900/90 border border-white/10 text-white py-8 px-10 rounded-[2.2rem] focus:outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all text-base placeholder:text-slate-700 shadow-2xl">
+                    <button type="submit" class="absolute right-4 top-4 bottom-4 bg-indigo-600 hover:bg-indigo-500 text-white px-10 rounded-3xl font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 shadow-xl">
+                        Analyze Case
+                    </button>
                 </form>
             </div>
-        </main>
-    </div>
+        </div>
+    </main>
 
     <script>
         async function executeAnalysis(event) {
             event.preventDefault();
             const input = document.getElementById('u-in');
             const board = document.getElementById('board-container');
-            const historyList = document.getElementById('history-list');
             const val = input.value.trim(); 
-            
             if(!val) return;
 
-            // FIX: Corrected date options to prevent RangeError crash
-            const now = new Date();
-            const timestamp = now.toLocaleString('en-US', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
-            
-            // Add to UI history sidebar immediately
-            const historyItem = document.createElement('div');
-            historyItem.className = 'history-card';
-            historyItem.innerHTML = `<p class="text-[11px] text-slate-300 truncate font-medium">${val}</p><p class="text-[8px] text-slate-600 mt-2 font-mono uppercase">${timestamp}</p>`;
-            historyList.prepend(historyItem);
-
-            input.value = '';
-            board.innerHTML = `<div class="animate-pulse text-indigo-400 text-[10px] font-black tracking-[4px]">CONNECTING TO NEXUS CORE...</div>`;
+            // Loading State
+            board.innerHTML = `
+                <div class="clinical-card p-20 flex flex-col items-center justify-center">
+                    <div class="flex space-x-2">
+                        <div class="w-3 h-3 bg-indigo-600 rounded-full animate-bounce"></div>
+                        <div class="w-3 h-3 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                        <div class="w-3 h-3 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.5s]"></div>
+                    </div>
+                    <p class="mt-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Processing Diagnostic Protocol...</p>
+                </div>`;
 
             try {
-                // UPDATED PATH: Matches your urls.py path('api/chat/', ...)
                 const response = await fetch(`/api/chat/?text=${encodeURIComponent(val)}`);
-                if (!response.ok) throw new Error('Endpoint not found');
                 const data = await response.json();
 
+                // Professional Clinical Report UI
                 board.innerHTML = `
-                <div class="health-board text-left">
-                    <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                        <h2 class="text-xl font-black text-slate-900 tracking-tight">Executive Health Strategy</h2>
-                    </div>
-                    <div class="content-scroll">
-                        <div class="prose prose-slate text-sm text-slate-600">
-                            ${data.reply.replace(/\n/g, '<br>')}
+                <div class="clinical-card flex flex-col max-h-[600px] overflow-hidden">
+                    <div class="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight italic">Nikhil AI Intelligence Report</h2>
+                            <p class="text-[9px] text-slate-400 font-bold uppercase mt-1 tracking-widest">Case ID: #${Math.floor(1000 + Math.random() * 9000)} • Clinically Screened</p>
                         </div>
+                        <div class="w-3 h-3 rounded-full ${data.is_health ? 'bg-emerald-500' : 'bg-amber-500'} animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
                     </div>
-                    <div class="fixed-footer">
-                        <a href="${data.h_link}" target="_blank" class="bg-indigo-600 text-white text-[10px] px-8 py-3.5 rounded-xl font-black uppercase tracking-widest hover:bg-indigo-700 transition">Nearby Hospitals</a>
-                        <a href="${data.p_link}" target="_blank" class="bg-white border border-slate-200 text-slate-900 text-[10px] px-8 py-3.5 rounded-xl font-black uppercase tracking-widest hover:bg-slate-50 transition">Order Medicine</a>
+                    <div class="flex-1 overflow-y-auto p-10 text-slate-600 leading-relaxed text-sm custom-scroll">
+                        ${data.reply.replace(/\n/g, '<br>')}
                     </div>
+                    ${data.is_health ? `
+                    <div class="p-8 border-t flex gap-4 bg-white shadow-inner">
+                        <a href="${data.h_link}" target="_blank" class="flex-1 bg-slate-900 text-white text-[10px] py-5 rounded-2xl font-black uppercase tracking-widest text-center hover:bg-black transition shadow-lg">View Medical Centers</a>
+                        <a href="${data.p_link}" target="_blank" class="flex-1 bg-indigo-600 text-white text-[10px] py-5 rounded-2xl font-black uppercase tracking-widest text-center hover:bg-indigo-700 transition shadow-lg">Pharmacy Resources</a>
+                    </div>` : ''}
                 </div>`;
+                input.value = ''; 
             } catch (error) {
-                board.innerHTML = `<div class="text-red-500 font-black text-[10px]">BACKEND ERROR: Verify Python server is on port 8000.</div>`;
+                board.innerHTML = `<div class="clinical-card p-12 text-red-500 font-black uppercase tracking-widest text-center">System Offline: Connection Interrupted</div>`;
             }
         }
     </script>
